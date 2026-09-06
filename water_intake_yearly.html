@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>水分量アプリ</title>
+
+<meta name="theme-color" content="#1e88e5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="水分量">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='512'%20height='512'%3E%3Crect%20width='512'%20height='512'%20rx='96'%20fill='%231e88e5'/%3E%3Cpath%20d='M256%2096C256%2096%20152%20220%20152%20300a104%20104%200%200%200%20208%200C360%20220%20256%2096%20256%2096Z'%20fill='white'/%3E%3C/svg%3E">
+
+<style>
+  :root {
+    --bg: #f4f7fa;
+    --card: #ffffff;
+    --ink: #1a2733;
+    --sub: #5a6b7a;
+    --line: #dde5ec;
+    --accent: #1e88e5;
+    --accent-soft: #e3f2fd;
+    --bar-total: #b8d9f5;
+    --bar-drink: #1e88e5;
+    --warn: #b26a00;
+    --warn-soft: #fff4e0;
+    --danger: #c62828;
+    --danger-soft: #fdecea;
+    --ok: #2e7d32;
+    --ok-soft: #e6f4ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10171e;
+      --card: #1a232d;
+      --ink: #e7edf3;
+      --sub: #9fb0be;
+      --line: #2c3a47;
+      --accent: #4fa8ef;
+      --accent-soft: #16324a;
+      --bar-total: #2f4a63;
+      --bar-drink: #4fa8ef;
+      --warn: #e0a75a;
+      --warn-soft: #35291a;
+      --danger: #ef5350;
+      --danger-soft: #3a1f1e;
+      --ok: #66bb6a;
+      --ok-soft: #17301c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    line-height: 1.6;
+    padding: max(20px, env(safe-area-inset-top)) 16px calc(64px + env(safe-area-inset-bottom));
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.3rem; margin: 0 0 14px; }
+  .lede { color: var(--sub); font-size: .86rem; margin: 0 0 18px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  h2 { font-size: 1rem; margin: 0 0 12px; }
+  h3 { font-size: .9rem; margin: 16px 0 8px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 13px;
+  }
+  label { display: block; font-size: .83rem; font-weight: 600; margin-bottom: 5px; }
+  .hint { font-weight: 400; color: var(--sub); font-size: .76rem; }
+  input[type="number"], input[type="time"], select {
+    width: 100%;
+    padding: 9px 10px;
+    font-size: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .check { display: flex; align-items: flex-start; gap: 8px; margin-top: 9px; }
+  .check input { width: 18px; height: 18px; margin-top: 3px; flex: 0 0 auto; }
+  .check label { margin: 0; font-weight: 500; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tabs button {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: .9rem;
+    font-weight: 700;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--sub);
+    cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 11px 16px;
+    font-size: .95rem;
+    font-weight: 700;
+    border-radius: 10px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+  }
+  .btn.ghost { background: transparent; color: var(--accent); }
+  .btn.wide { width: 100%; }
+  .btn.big { padding: 15px; font-size: 1.05rem; }
+  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+  .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat {
+    background: var(--accent-soft);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+  }
+  .stat .k { font-size: .78rem; color: var(--sub); }
+  .stat .v { font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; }
+  .stat .v span { font-size: .85rem; font-weight: 600; }
+  .rangeline { font-size: .82rem; color: var(--sub); margin-top: 10px; text-align: center; }
+
+  .chartbox { width: 100%; overflow-x: auto; }
+  canvas { display: block; width: 100%; height: 240px; }
+  .legend { display: flex; gap: 16px; font-size: .8rem; color: var(--sub); margin-top: 8px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 5px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  th, td { padding: 7px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--sub); font-weight: 600; }
+  tr.peak td { background: var(--warn-soft); }
+
+  .wbgt {
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: #fff;
+    text-align: center;
+  }
+  .wbgt .num { font-size: 2rem; font-weight: 800; line-height: 1.1; }
+  .wbgt .lv { font-size: .95rem; font-weight: 700; margin-top: 2px; }
+  .wbgt .adv { font-size: .8rem; opacity: .95; margin-top: 4px; }
+
+  .checklist { list-style: none; padding: 0; margin: 0; }
+  .checklist li { display: flex; align-items: flex-start; gap: 9px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist input { width: 20px; height: 20px; margin-top: 2px; flex: 0 0 auto; }
+  .checklist span { font-size: .88rem; }
+  .checklist .done span { color: var(--sub); text-decoration: line-through; }
+
+  .timerwrap { text-align: center; padding: 8px 0; }
+  .timer-next { font-size: .82rem; color: var(--sub); }
+  .timer-big { font-size: 2.6rem; font-weight: 800; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+  .timer-sub { font-size: .85rem; color: var(--sub); }
+
+  .banner {
+    background: var(--danger);
+    color: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    text-align: center;
+    font-weight: 700;
+    margin-bottom: 12px;
+    animation: pulse 1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .78; } }
+
+  .progress { height: 12px; border-radius: 6px; background: var(--line); overflow: hidden; margin: 10px 0 6px; }
+  .progress > i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+  .pace { font-size: .85rem; text-align: center; }
+  .pace.behind { color: var(--danger); font-weight: 700; }
+  .pace.ok { color: var(--ok); font-weight: 700; }
+
+  .box { border-radius: 10px; padding: 12px 14px; font-size: .85rem; margin-top: 12px; }
+  .box.warn { background: var(--warn-soft); border: 1px solid var(--warn); color: var(--warn); }
+  .box.danger { background: var(--danger-soft); border: 1px solid var(--danger); color: var(--danger); }
+  .box.ok { background: var(--ok-soft); border: 1px solid var(--ok); color: var(--ok); }
+  .box.info { background: var(--accent-soft); border: 1px solid var(--accent); }
+  .box ul { margin: 6px 0 0; padding-left: 20px; }
+
+  .disclaimer { color: var(--sub); font-size: .79rem; margin-top: 10px; }
+  .install { font-size: .82rem; color: var(--sub); border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; }
+  .install b { color: var(--ink); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>水分量アプリ</h1>
+
+  <div class="card">
+    <h2>基本情報</h2>
+    <div class="grid">
+      <div>
+        <label>体重 <span class="hint">kg</span></label>
+        <input type="number" id="weight" value="65" min="20" max="200" step="0.5">
+      </div>
+      <div>
+        <label>年齢 <span class="hint">歳</span></label>
+        <input type="number" id="age" value="40" min="15" max="110" step="1">
+      </div>
+    </div>
+    <div class="check">
+      <input type="checkbox" id="acclimatized">
+      <label for="acclimatized">暑熱順化している（普段から屋外の暑い環境で活動している）</label>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button id="tab-year" role="tab" aria-selected="true">年間カレンダー</button>
+    <button id="tab-round" role="tab" aria-selected="false">ラウンドモード</button>
+  </div>
+
+  <!-- ===================== 年間カレンダー ===================== -->
+  <section id="panel-year">
+    <p class="lede">住んでいる地域と運動量から、1年を通した「1日あたりの目標水分量」を月ごとに概算します。気温・湿度は気象庁の平年値（概算）です。</p>
+
+    <div class="card">
+      <h2>設定</h2>
+      <div class="grid">
+        <div>
+          <label>地域</label>
+          <select id="city"></select>
+        </div>
+        <div>
+          <label>1日の運動強度</label>
+          <select id="intensity">
+            <option value="0">なし</option>
+            <option value="0.4" selected>軽い（散歩・軽い家事）</option>
+            <option value="0.7">中（ジョギング・自転車）</option>
+            <option value="1.3">高（強度の高い運動・競技）</option>
+          </select>
+        </div>
+        <div>
+          <label>1日の運動時間 <span class="hint">時間</span></label>
+          <input type="number" id="exTime" value="0.5" min="0" max="8" step="0.25">
+        </div>
+        <div>
+          <label>標高 <span class="hint">m</span></label>
+          <input type="number" id="altitude" value="0" min="0" max="6000" step="100">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>年間の目安（1日あたり）</h2>
+      <div class="summary">
+        <div class="stat">
+          <div class="k">総水分量（食事＋飲料＋代謝水）</div>
+          <div class="v" id="avgTotal">—<span> mL</span></div>
+        </div>
+        <div class="stat">
+          <div class="k">うち飲料で摂る目標</div>
+          <div class="v" id="avgDrink">—<span> mL</span></div>
+        </div>
+      </div>
+      <div class="rangeline" id="rangeline"></div>
+    </div>
+
+    <div class="card">
+      <h2>月別グラフ</h2>
+      <div class="chartbox"><canvas id="chart"></canvas></div>
+      <div class="legend">
+        <span><i style="background:var(--bar-total)"></i>総水分量</span>
+        <span><i style="background:var(--bar-drink)"></i>飲料で摂る目標</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>月別テーブル</h2>
+      <div class="chartbox">
+        <table>
+          <thead><tr><th>月</th><th>平均気温</th><th>湿度</th><th>総水分量</th><th>飲料目標</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <p class="disclaimer">
+        実測で補正することを前提とした推定値です（個人差 ±30%以上）。毎朝の体重と尿の色で微調整してください。
+      </p>
+    </div>
+  </section>
+
+  <!-- ===================== ラウンドモード ===================== -->
+  <section id="panel-round" hidden>
+    <p class="lede">屋外スポーツの1回分について、暑さ指数（WBGT）の警戒レベル、必要な補給量、スタート前チェックリスト、ラウンド中の給水タイマーを提供します。7月のゴルフのような場面で「喉が渇く前に・少量ずつ」摂るための機能です。</p>
+
+    <div class="card">
+      <h2>この1回の条件</h2>
+      <div class="grid">
+        <div>
+          <label>種目</label>
+          <select id="rActivity">
+            <option value="0.6" selected>ゴルフ（歩き・炎天下）</option>
+            <option value="0.55">ゴルフ（カート）</option>
+            <option value="0.9">ジョギング・ランニング</option>
+            <option value="1.0">テニス・フットサル</option>
+            <option value="0.7">登山・ハイキング</option>
+            <option value="0.7">その他（中強度）</option>
+          </select>
+        </div>
+        <div>
+          <label>開始時刻</label>
+          <input type="time" id="rStart" value="08:00">
+        </div>
+        <div>
+          <label>所要時間 <span class="hint">時間</span></label>
+          <input type="number" id="rDuration" value="4.5" min="0.5" max="10" step="0.5">
+        </div>
+        <div>
+          <label>気温 <span class="hint">℃</span></label>
+          <input type="number" id="rTemp" value="33" min="0" max="45" step="1">
+        </div>
+        <div>
+          <label>湿度 <span class="hint">%</span></label>
+          <input type="number" id="rHum" value="60" min="10" max="100" step="5">
+        </div>
+      </div>
+      <div class="check">
+        <input type="checkbox" id="rSun" checked>
+        <label for="rSun">日なた中心（直射日光下でのプレー）</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>暑さ指数（WBGT）と警戒レベル</h2>
+      <div class="wbgt" id="wbgtBox">
+        <div class="num" id="wbgtNum">—</div>
+        <div class="lv" id="wbgtLv"></div>
+        <div class="adv" id="wbgtAdv"></div>
+      </div>
+      <div class="box info" style="margin-top:12px;">
+        <div>この1回の見込み発汗量: <b id="sweatEst">—</b></div>
+        <div>ラウンド中の目標補給量: <b id="sessTarget">—</b>（約20分ごとに <b id="perSlot">—</b>）</div>
+      </div>
+      <div class="box" id="elecBox"></div>
+    </div>
+
+    <div class="card">
+      <h2>スタート前チェックリスト</h2>
+      <ul class="checklist" id="preChecklist"></ul>
+      <div class="btnrow">
+        <button class="btn ghost" id="resetPre">チェックをリセット</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>給水タイマー</h2>
+
+      <div class="banner" id="drinkBanner" hidden>水分補給の時間です</div>
+
+      <div class="timerwrap" id="timerIdle">
+        <div class="timer-sub">スタート前チェックを済ませてから開始してください。</div>
+        <div class="btnrow" style="justify-content:center;">
+          <button class="btn big" id="startRound">ラウンド開始</button>
+          <button class="btn ghost" id="testNotify">テスト通知</button>
+        </div>
+        <div class="timer-sub" id="notifyState" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="timerwrap" id="timerActive" hidden>
+        <div class="timer-next">次の給水まで</div>
+        <div class="timer-big" id="countdown">--:--</div>
+        <div class="timer-sub" id="slotInfo"></div>
+
+        <div class="progress"><i id="progFill" style="width:0%"></i></div>
+        <div class="pace" id="paceText"></div>
+
+        <div class="btnrow" style="justify-content:center;">
+          <button class="btn big" id="logDrink">飲んだ（<span id="logAmt">200</span>mL）</button>
+        </div>
+        <div class="btnrow" style="justify-content:center;">
+          <button class="btn ghost" id="amtMinus">− 50</button>
+          <button class="btn ghost" id="amtPlus">＋ 50</button>
+          <button class="btn ghost" id="endRound">ラウンド終了</button>
+        </div>
+      </div>
+
+      <div class="box warn" style="margin-top:12px;">
+        画面ロック中やアプリを閉じている間は通知が鳴らない場合があります（特にiPhone）。アプリを開いたまま・画面表示のままの使用を推奨します。開始中は自動で画面の常時点灯を試みます。
+      </div>
+    </div>
+
+    <div class="card" id="postCard" hidden>
+      <h2>ラウンド後の記録</h2>
+      <div class="grid">
+        <div>
+          <label>開始前の体重 <span class="hint">kg</span></label>
+          <input type="number" id="wBefore" min="20" max="200" step="0.1">
+        </div>
+        <div>
+          <label>終了後の体重 <span class="hint">kg</span></label>
+          <input type="number" id="wAfter" min="20" max="200" step="0.1">
+        </div>
+        <div>
+          <label>ラウンド中の総飲水量 <span class="hint">mL</span></label>
+          <input type="number" id="drankTotal" min="0" max="8000" step="50">
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="calcPost">計算する</button>
+      </div>
+      <div class="box" id="postResult" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>体調がおかしいと感じたら</h2>
+      <div class="box danger">
+        <b>すぐにプレーを中止して日陰・冷房へ。</b>
+        <ul>
+          <li>初期サイン: めまい・立ちくらみ・頭痛・吐き気・大量の汗または汗が止まる・こむら返り・力が入らない</li>
+          <li>首の両側・脇の下・脚の付け根を氷や冷たいペットボトルで冷やす</li>
+          <li>塩分入りの水分（経口補水液）を少しずつ</li>
+          <li>返事がおかしい・自力で水が飲めない・意識がもうろう → ためらわず<b>119番</b>。冷やしながら救急を待つ</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <div class="card install">
+    <b>アプリとして使うには</b><br>
+    iPhone（Safari）: 共有ボタン →「ホーム画面に追加」。<br>
+    Android（Chrome）: メニュー →「アプリをインストール」。<br>
+    ※オフライン起動を含む完全なインストールには、このファイルをhttps（GitHub Pages等）で配信する必要があります。file:// で開いた場合はブラウザのキャッシュで動作します。
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var KEY = "water-app-v2";
+  var $ = function (id) { return document.getElementById(id); };
+  function cssvar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888"; }
+  function round10(v) { return Math.round(v / 10) * 10; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function fmtc(v) { return round10(v).toLocaleString("ja-JP"); }
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+  /* ---------- 永続化 ---------- */
+  var INPUT_IDS = ["weight","age","acclimatized","city","intensity","exTime","altitude",
+    "rActivity","rStart","rDuration","rTemp","rHum","rSun"];
+  var store = {};
+  try { store = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { store = {}; }
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} }
+
+  function bindInputs(onChange) {
+    INPUT_IDS.forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      if (store.inputs && store.inputs[id] !== undefined) {
+        if (el.type === "checkbox") el.checked = !!store.inputs[id];
+        else el.value = store.inputs[id];
+      }
+      var handler = function () {
+        store.inputs = store.inputs || {};
+        store.inputs[id] = el.type === "checkbox" ? el.checked : el.value;
+        persist();
+        onChange();
+      };
+      el.addEventListener("input", handler);
+      el.addEventListener("change", handler);
+    });
+  }
+  function iv(id) {
+    var el = $(id);
+    if (!el) return 0;
+    if (el.type === "checkbox") return el.checked;
+    return parseFloat(el.value) || 0;
+  }
+
+  /* ---------- タブ ---------- */
+  var tabYear = $("tab-year"), tabRound = $("tab-round");
+  var panelYear = $("panel-year"), panelRound = $("panel-round");
+  function selectTab(which) {
+    var year = which === "year";
+    tabYear.setAttribute("aria-selected", year);
+    tabRound.setAttribute("aria-selected", !year);
+    panelYear.hidden = !year;
+    panelRound.hidden = year;
+    store.tab = which; persist();
+    if (year) drawChart();
+  }
+  tabYear.addEventListener("click", function () { selectTab("year"); });
+  tabRound.addEventListener("click", function () { selectTab("round"); });
+
+  /* ================= 年間カレンダー ================= */
+  var CITIES = [
+    { name: "札幌",   t: [-3.2,-2.7,1.1,7.3,13.0,17.0,21.1,22.3,18.6,12.1,5.2,-0.9], h: [70,69,66,60,63,72,78,77,73,69,68,71] },
+    { name: "仙台",   t: [2.0,2.4,5.5,10.7,15.6,19.2,22.9,24.4,21.2,15.7,9.8,4.5],    h: [67,66,64,64,71,79,82,80,78,74,70,68] },
+    { name: "新潟",   t: [2.8,3.1,6.2,11.3,16.7,20.9,24.9,26.5,22.5,16.7,10.5,5.5],   h: [72,71,68,66,69,75,78,76,75,74,74,74] },
+    { name: "東京",   t: [5.4,6.1,9.4,14.3,18.8,21.9,25.7,26.9,23.3,18.0,12.5,7.7],   h: [51,53,56,62,69,75,77,74,75,71,64,56] },
+    { name: "名古屋", t: [4.8,5.5,9.2,14.6,19.4,23.0,26.9,28.2,24.5,18.6,12.6,7.2],   h: [63,61,59,60,66,73,76,72,72,69,68,66] },
+    { name: "大阪",   t: [6.2,6.6,9.9,15.6,20.4,24.0,28.1,29.2,25.3,19.6,13.7,8.5],   h: [61,60,59,59,63,71,72,68,68,66,66,63] },
+    { name: "広島",   t: [5.4,6.2,9.5,14.9,19.7,23.3,27.5,28.6,24.7,18.9,12.9,7.6],   h: [66,64,62,62,66,73,74,71,71,70,71,69] },
+    { name: "福岡",   t: [6.9,7.8,10.8,15.6,19.7,23.3,27.4,28.4,24.7,19.6,14.2,9.1],  h: [63,63,63,64,68,75,77,74,73,68,68,65] },
+    { name: "鹿児島", t: [8.7,9.9,12.8,16.9,20.8,24.0,28.1,28.8,26.3,21.6,16.2,11.1], h: [66,65,65,66,71,78,76,74,73,68,69,67] },
+    { name: "那覇",   t: [17.3,17.5,19.1,21.5,24.2,27.2,29.1,29.0,27.9,25.5,22.5,19.0],h: [66,70,73,76,79,83,78,78,77,73,71,67] }
+  ];
+  var MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+  CITIES.forEach(function (c, i) {
+    var o = document.createElement("option");
+    o.value = i; o.textContent = c.name;
+    $("city").appendChild(o);
+  });
+  if (!(store.inputs && store.inputs.city !== undefined)) $("city").value = 3;
+
+  function baseWater() {
+    var age = iv("age");
+    var coef = age >= 65 ? 25 : age >= 55 ? 30 : 35;
+    var total = iv("weight") * coef;
+    return { total: total, beverage: total - total * 0.25 - 300 };
+  }
+  function monthTargets(temp, humidity) {
+    var b = baseWater();
+    var acclim = iv("acclimatized");
+    var humidityFactor = humidity >= 70 ? 1.4 : humidity >= 60 ? 1.15 : 1.0;
+    var climateAdd = Math.max(0, (temp - 25) * 100) * humidityFactor;
+    var sweatRate = iv("intensity");
+    if (temp >= 28) sweatRate *= 1.5; else if (temp >= 25) sweatRate *= 1.2;
+    if (humidity >= 70) sweatRate *= 1.15;
+    if (acclim) sweatRate *= 1.2;
+    var sweatAdd = sweatRate * iv("exTime") * 1000 * 1.25;
+    var altitudeAdd = iv("altitude") >= 2500 ? 500 : 0;
+    var extra = climateAdd + sweatAdd + altitudeAdd;
+    return { total: b.total + extra, drink: b.beverage + extra };
+  }
+
+  var lastMonthly = null;
+  function updateYear() {
+    var c = CITIES[parseInt($("city").value, 10) || 0];
+    lastMonthly = c.t.map(function (temp, i) {
+      var r = monthTargets(temp, c.h[i]);
+      return { month: MONTHS[i], temp: temp, hum: c.h[i], total: r.total, drink: r.drink };
+    });
+    var avgTotal = lastMonthly.reduce(function (s, m) { return s + m.total; }, 0) / 12;
+    var avgDrink = lastMonthly.reduce(function (s, m) { return s + m.drink; }, 0) / 12;
+    $("avgTotal").innerHTML = fmtc(avgTotal) + '<span> mL</span>';
+    $("avgDrink").innerHTML = fmtc(avgDrink) + '<span> mL</span>';
+    var maxM = lastMonthly.reduce(function (a, b) { return b.drink > a.drink ? b : a; });
+    var minM = lastMonthly.reduce(function (a, b) { return b.drink < a.drink ? b : a; });
+    $("rangeline").textContent = "最も多い月: " + maxM.month + " 約 " + fmtc(maxM.drink)
+      + " mL ／ 最も少ない月: " + minM.month + " 約 " + fmtc(minM.drink) + " mL（飲料）";
+    var tb = $("tbody"); tb.innerHTML = "";
+    lastMonthly.forEach(function (m) {
+      var tr = document.createElement("tr");
+      if (m === maxM) tr.className = "peak";
+      tr.innerHTML = "<td>" + m.month + "</td><td>" + m.temp.toFixed(1) + "℃</td><td>" + m.hum
+        + "%</td><td>" + fmtc(m.total) + " mL</td><td>" + fmtc(m.drink) + " mL</td>";
+      tb.appendChild(tr);
+    });
+    drawChart();
+  }
+
+  function drawChart() {
+    if (!lastMonthly || panelYear.hidden) return;
+    var canvas = $("chart");
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = canvas.clientWidth || 640, cssH = 240;
+    canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+    var ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    var padL = 44, padR = 10, padT = 12, padB = 24;
+    var w = cssW - padL - padR, h = cssH - padT - padB;
+    var maxV = Math.ceil(Math.max.apply(null, lastMonthly.map(function (m) { return m.total; })) / 500) * 500;
+    var sub = cssvar("--sub"), line = cssvar("--line");
+    var cTotal = cssvar("--bar-total"), cDrink = cssvar("--bar-drink");
+    ctx.font = "11px -apple-system, sans-serif";
+    ctx.strokeStyle = line; ctx.lineWidth = 1;
+    for (var s = 0; s <= 4; s++) {
+      var gv = maxV * s / 4, gy = padT + h - (gv / maxV) * h;
+      ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(padL + w, gy); ctx.stroke();
+      ctx.fillStyle = sub; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.fillText(Math.round(gv), padL - 6, gy);
+    }
+    var slot = w / 12, bw = slot * 0.6;
+    lastMonthly.forEach(function (m, i) {
+      var x = padL + slot * i + (slot - bw) / 2;
+      ctx.fillStyle = cTotal; ctx.fillRect(x, padT + h - (m.total / maxV) * h, bw, (m.total / maxV) * h);
+      ctx.fillStyle = cDrink; ctx.fillRect(x, padT + h - (m.drink / maxV) * h, bw, (m.drink / maxV) * h);
+      ctx.fillStyle = sub; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText(i + 1, x + bw / 2, padT + h + 6);
+    });
+  }
+  window.addEventListener("resize", drawChart);
+
+  /* ================= ラウンドモード ================= */
+  var SLOT_MIN = 20;
+  var PRE_ITEMS = [
+    "前夜・当日の飲酒を控えた",
+    "起床時の尿の色は薄い黄色だった（濃ければ無理をしない）",
+    "朝食をとった",
+    "開始1〜2時間前に 250〜500mL 飲んだ",
+    "スタート直前に 約250mL 飲んだ",
+    "開始前の体重を測定した",
+    "冷やした飲料・経口補水液を十分に準備した",
+    "帽子・日傘・日陰で休める段取りを確認した"
+  ];
+
+  function estimateWBGT() {
+    // 屋内/日陰の推定式（Ono & Tonouchi 2014 の気温・湿度項）。直射日光下は +3℃。
+    var T = iv("rTemp"), RH = clamp(iv("rHum"), 10, 100);
+    var shade = 0.735 * T + 0.0374 * RH + 0.00292 * T * RH - 4.064;
+    return shade + (iv("rSun") ? 3.0 : 0);
+  }
+  function wbgtLevel(w) {
+    if (w >= 31) return { lv: "運動は原則中止", adv: "特別な場合以外は中止。実施するなら頻繁に休息と給水を。", col: "#c62828" };
+    if (w >= 28) return { lv: "厳重警戒", adv: "激しい運動は中止。10〜20分ごとに休息と給水を。", col: "#e64a19" };
+    if (w >= 25) return { lv: "警戒", adv: "積極的に休息をとり、こまめに給水を。", col: "#ef6c00" };
+    if (w >= 21) return { lv: "注意", adv: "熱中症の兆候に注意し、積極的に水分補給を。", col: "#f9a825" };
+    return { lv: "ほぼ安全", adv: "適宜、水分補給を。", col: "#2e7d32" };
+  }
+  function sessionPlan() {
+    var wbgt = estimateWBGT();
+    var lv = wbgtLevel(wbgt);
+    var dur = iv("rDuration");
+    var wf = wbgt >= 31 ? 1.7 : wbgt >= 28 ? 1.5 : wbgt >= 25 ? 1.3 : wbgt >= 21 ? 1.1 : 1.0;
+    var rate = iv("rActivity");
+    if (iv("acclimatized")) rate *= 1.15;
+    if (store.measuredRate) rate = Math.max(rate, store.measuredRate * 0.9);
+    var sweatMl = rate * wf * dur * 1000;
+    var allowableDeficit = 0.015 * iv("weight") * 1000;
+    var duringTarget = Math.max(sweatMl * 0.8, sweatMl - allowableDeficit);
+    var slots = Math.floor(dur * 60 / SLOT_MIN) + 1;
+    var perSlot = clamp(round10(duringTarget / slots), 100, 300);
+    return { wbgt: wbgt, lv: lv, dur: dur, sweatMl: sweatMl, duringTarget: duringTarget, slots: slots, perSlot: perSlot };
+  }
+
+  function updateRound() {
+    var p = sessionPlan();
+    var box = $("wbgtBox");
+    box.style.background = p.lv.col;
+    $("wbgtNum").textContent = p.wbgt.toFixed(1);
+    $("wbgtLv").textContent = p.lv.lv;
+    $("wbgtAdv").textContent = p.lv.adv;
+    $("sweatEst").textContent = "約 " + fmtc(p.sweatMl) + " mL（" + (p.sweatMl / 1000).toFixed(1) + " L）";
+    $("sessTarget").textContent = "約 " + fmtc(p.duringTarget) + " mL";
+    $("perSlot").textContent = p.perSlot + " mL";
+
+    var eb = $("elecBox");
+    if (p.dur >= 1 || p.wbgt >= 25) {
+      var all = p.wbgt >= 28;
+      eb.className = "box warn";
+      eb.innerHTML = "<b>電解質の補給が必要です。</b>" +
+        (all ? "給水の<b>すべて</b>を" : "給水の<b>半分程度</b>を") +
+        "スポーツドリンクまたは経口補水液（食塩相当 0.1〜0.2%＝ナトリウム 40〜80mg/100mL、糖質 4〜8%）にしてください。" +
+        "水だけを大量に飲むと低ナトリウム血症（低張性脱水）の危険があります。";
+    } else {
+      eb.className = "box info";
+      eb.innerHTML = "短時間・低WBGTのため水でも可。1時間を超える場合はスポーツドリンクを併用してください。";
+    }
+
+    if (!roundState.active) $("logAmt").textContent = String(p.perSlot);
+    renderTimer();
+  }
+
+  /* ---------- チェックリスト ---------- */
+  function renderChecklist() {
+    var ul = $("preChecklist"); ul.innerHTML = "";
+    store.pre = store.pre || {};
+    PRE_ITEMS.forEach(function (text, i) {
+      var li = document.createElement("li");
+      var cb = document.createElement("input");
+      cb.type = "checkbox"; cb.id = "pre" + i; cb.checked = !!store.pre[i];
+      var sp = document.createElement("span"); sp.textContent = text;
+      var lab = document.createElement("label"); lab.setAttribute("for", cb.id);
+      lab.style.margin = "0"; lab.style.fontWeight = "500"; lab.appendChild(sp);
+      if (cb.checked) li.className = "done";
+      cb.addEventListener("change", function () {
+        store.pre[i] = cb.checked; persist();
+        li.className = cb.checked ? "done" : "";
+      });
+      li.appendChild(cb); li.appendChild(lab);
+      ul.appendChild(li);
+    });
+  }
+  $("resetPre").addEventListener("click", function () {
+    store.pre = {}; persist(); renderChecklist();
+  });
+
+  /* ---------- 通知・音・バイブ ---------- */
+  var audioCtx = null;
+  function beep() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      [0, 0.28].forEach(function (t) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = "sine"; o.frequency.value = 880;
+        o.connect(g); g.connect(audioCtx.destination);
+        var s = audioCtx.currentTime + t;
+        g.gain.setValueAtTime(0.001, s);
+        g.gain.exponentialRampToValueAtTime(0.4, s + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, s + 0.22);
+        o.start(s); o.stop(s + 0.24);
+      });
+    } catch (e) {}
+  }
+  function fireAlert(msg) {
+    if ("Notification" in window && Notification.permission === "granted") {
+      try { new Notification("水分補給の時間です", { body: msg, tag: "drink", renotify: true }); } catch (e) {}
+    }
+    if (navigator.vibrate) { try { navigator.vibrate([250, 120, 250]); } catch (e) {} }
+    beep();
+    var b = $("drinkBanner");
+    b.hidden = false;
+    b.textContent = "水分補給の時間です — " + msg;
+    flashTitle();
+  }
+  var titleTimer = null, origTitle = document.title;
+  function flashTitle() {
+    var on = false;
+    clearInterval(titleTimer);
+    titleTimer = setInterval(function () {
+      document.title = (on = !on) ? "💧 水分補給！" : origTitle;
+    }, 900);
+  }
+  function stopFlash() { clearInterval(titleTimer); document.title = origTitle; }
+
+  $("testNotify").addEventListener("click", function () {
+    requestNotify();
+    fireAlert("これはテストです（約200mL）");
+    setTimeout(function () { $("drinkBanner").hidden = true; stopFlash(); }, 4000);
+  });
+  function requestNotify() {
+    var el = $("notifyState");
+    if (!("Notification" in window)) { el.textContent = "この環境は通知に対応していません。音とバイブでお知らせします。"; return; }
+    try {
+      var msg = function (p) {
+        el.textContent = p === "granted" ? "通知: 許可されています。" : "通知: ブロック中。音とバイブでお知らせします。";
+      };
+      if (Notification.permission === "default") {
+        var r = Notification.requestPermission(msg);
+        if (r && r.then) r.then(msg);
+      } else {
+        msg(Notification.permission);
+      }
+    } catch (e) {
+      el.textContent = "通知は使えません。音とバイブでお知らせします。";
+    }
+  }
+
+  /* ---------- Wake Lock ---------- */
+  var wakeLock = null;
+  function requestWake() {
+    if (!("wakeLock" in navigator)) return;
+    navigator.wakeLock.request("screen").then(function (w) {
+      wakeLock = w;
+      w.addEventListener("release", function () { wakeLock = null; });
+    }).catch(function () {});
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible" && roundState.active && !wakeLock) requestWake();
+    if (document.visibilityState === "visible" && roundState.active) tick();
+  });
+
+  /* ---------- ラウンド状態 ---------- */
+  var roundState = store.round || { active: false };
+  function saveRound() { store.round = roundState; persist(); }
+
+  function startRound() {
+    var p = sessionPlan();
+    requestNotify();
+    requestWake();
+    beep(); // AudioContextをユーザー操作で有効化
+    roundState = {
+      active: true,
+      startMs: Date.now(),
+      durationMin: Math.round(p.dur * 60),
+      slots: p.slots,
+      perSlot: p.perSlot,
+      notified: [],
+      log: []
+    };
+    saveRound();
+    $("logAmt").textContent = String(p.perSlot);
+    renderTimer();
+    tick();
+  }
+  function endRound() {
+    roundState.active = false;
+    roundState.endMs = Date.now();
+    saveRound();
+    clearInterval(tickTimer); tickTimer = null;
+    if (wakeLock) { try { wakeLock.release(); } catch (e) {} wakeLock = null; }
+    stopFlash();
+    $("drinkBanner").hidden = true;
+    renderTimer();
+    // ラウンド後カードに反映
+    $("postCard").hidden = false;
+    if (iv("weight") && !$("wBefore").value) $("wBefore").value = iv("weight");
+    var drank = roundState.log.reduce(function (s, x) { return s + x.ml; }, 0);
+    if (drank) $("drankTotal").value = drank;
+    $("postCard").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  $("startRound").addEventListener("click", startRound);
+  $("endRound").addEventListener("click", endRound);
+
+  $("amtMinus").addEventListener("click", function () {
+    $("logAmt").textContent = String(Math.max(50, parseInt($("logAmt").textContent, 10) - 50));
+  });
+  $("amtPlus").addEventListener("click", function () {
+    $("logAmt").textContent = String(Math.min(600, parseInt($("logAmt").textContent, 10) + 50));
+  });
+  $("logDrink").addEventListener("click", function () {
+    if (!roundState.active) return;
+    var ml = parseInt($("logAmt").textContent, 10) || roundState.perSlot;
+    roundState.log.push({ ms: Date.now(), ml: ml });
+    // 直近の未確認スロットを確認済みに
+    saveRound();
+    $("drinkBanner").hidden = true;
+    stopFlash();
+    if (navigator.vibrate) { try { navigator.vibrate(40); } catch (e) {} }
+    renderTimer();
+  });
+
+  function elapsedMin() { return (Date.now() - roundState.startMs) / 60000; }
+
+  var tickTimer = null;
+  function tick() {
+    if (!roundState.active) return;
+    var el = elapsedMin();
+    var curSlot = Math.floor(el / SLOT_MIN);
+    var maxSlot = roundState.slots - 1;
+    for (var s = 0; s <= Math.min(curSlot, maxSlot); s++) {
+      if (roundState.notified.indexOf(s) === -1) {
+        roundState.notified.push(s);
+        saveRound();
+        fireAlert("約 " + roundState.perSlot + " mL");
+      }
+    }
+    if (el >= roundState.durationMin) {
+      // 予定終了。通知だけ出して継続表示
+    }
+    renderTimer();
+  }
+
+  function renderTimer() {
+    var idle = $("timerIdle"), active = $("timerActive");
+    if (!roundState.active) {
+      idle.hidden = false; active.hidden = true;
+      return;
+    }
+    idle.hidden = true; active.hidden = false;
+
+    var el = elapsedMin();
+    var nextSlot = Math.floor(el / SLOT_MIN) + 1;
+    var maxSlot = roundState.slots - 1;
+    var cd = $("countdown");
+    if (nextSlot > maxSlot && el >= roundState.durationMin) {
+      cd.textContent = "終了予定";
+      $("slotInfo").textContent = "予定時間を過ぎました。クールダウンして「ラウンド終了」を押してください。";
+    } else {
+      var target = Math.min(nextSlot, maxSlot + 1) * SLOT_MIN;
+      var remSec = Math.max(0, Math.round((target - el) * 60));
+      cd.textContent = pad2(Math.floor(remSec / 60)) + ":" + pad2(remSec % 60);
+      $("slotInfo").textContent = "経過 " + Math.floor(el) + " 分 ／ 給水 " + roundState.notified.length
+        + " / " + roundState.slots + " 回　次は約 " + roundState.perSlot + " mL";
+    }
+
+    var consumed = roundState.log.reduce(function (s, x) { return s + x.ml; }, 0);
+    var expected = Math.min(roundState.slots, Math.floor(el / SLOT_MIN) + 1) * roundState.perSlot;
+    var totalTarget = roundState.slots * roundState.perSlot;
+    $("progFill").style.width = clamp(consumed / totalTarget * 100, 0, 100) + "%";
+    var pace = consumed - expected;
+    var pt = $("paceText");
+    if (pace < -roundState.perSlot * 0.5) {
+      pt.className = "pace behind";
+      pt.textContent = "ペース遅れ: あと約 " + fmtc(-pace) + " mL（累計 " + fmtc(consumed) + " / 目安 " + fmtc(expected) + " mL）";
+    } else {
+      pt.className = "pace ok";
+      pt.textContent = "ペース良好（累計 " + fmtc(consumed) + " / 目安 " + fmtc(expected) + " mL）";
+    }
+  }
+
+  /* ---------- ラウンド後 ---------- */
+  $("calcPost").addEventListener("click", function () {
+    var before = parseFloat($("wBefore").value) || 0;
+    var after = parseFloat($("wAfter").value) || 0;
+    var drank = (parseFloat($("drankTotal").value) || 0) / 1000;
+    var out = $("postResult");
+    if (!before || !after) { out.hidden = false; out.className = "box warn"; out.textContent = "開始前と終了後の体重を入力してください。"; return; }
+    var sweatL = (before - after) + drank; // 実際の発汗量
+    var pctLoss = (before - after) / before * 100;
+    var dur = roundState.durationMin ? roundState.durationMin / 60 : iv("rDuration");
+    var measuredRate = sweatL / Math.max(0.5, dur);
+    store.measuredRate = measuredRate; persist();
+    var recover = Math.max(0, (before - after)) * 1000 * 1.35;
+
+    var cls = pctLoss >= 2 ? "box danger" : pctLoss >= 1 ? "box warn" : "box ok";
+    var html = "<div>実際の発汗量: <b>約 " + sweatL.toFixed(1) + " L</b>（体重 " + before.toFixed(1)
+      + " → " + after.toFixed(1) + " kg、飲水 " + drank.toFixed(1) + " L）</div>"
+      + "<div>体重減少率: <b>" + pctLoss.toFixed(1) + "%</b>"
+      + (pctLoss >= 2 ? "（2%超＝脱水。次回はラウンド中の補給量を増やす）" : "（2%未満に収まっています）") + "</div>"
+      + "<div>あなたの実測発汗率: <b>約 " + measuredRate.toFixed(1) + " L/時</b> — 次回のラウンド計算に反映されます。</div>"
+      + "<div style='margin-top:6px'>回復のため、これから数時間かけて <b>約 " + fmtc(recover) + " mL</b> を電解質とともに補給してください。</div>";
+    out.hidden = false; out.className = cls; out.innerHTML = html;
+  });
+
+  /* ---------- 起動 ---------- */
+  bindInputs(function () { updateYear(); updateRound(); });
+  renderChecklist();
+  updateYear();
+  updateRound();
+  selectTab(store.tab === "round" ? "round" : "year");
+
+  if (roundState.active) {
+    // リロード時の再開
+    if (!tickTimer) tickTimer = setInterval(tick, 1000);
+    requestWake();
+    tick();
+  }
+  // タイマーは常駐（activeでなければ何もしない）
+  if (!tickTimer) tickTimer = setInterval(tick, 1000);
+})();
+
+/* マニフェストを動的生成（単一ファイル構成のため） */
+(function () {
+  try {
+    var icon = "data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='512'%20height='512'%3E%3Crect%20width='512'%20height='512'%20rx='96'%20fill='%231e88e5'/%3E%3Cpath%20d='M256%2096C256%2096%20152%20220%20152%20300a104%20104%200%200%200%20208%200C360%20220%20256%2096%20256%2096Z'%20fill='white'/%3E%3C/svg%3E";
+    var manifest = {
+      name: "水分量アプリ", short_name: "水分量",
+      start_url: ".", scope: ".", display: "standalone",
+      background_color: "#f4f7fa", theme_color: "#1e88e5",
+      icons: [{ src: icon, sizes: "any", type: "image/svg+xml", purpose: "any maskable" }]
+    };
+    var link = document.createElement("link");
+    link.rel = "manifest";
+    link.href = "data:application/manifest+json," + encodeURIComponent(JSON.stringify(manifest));
+    document.head.appendChild(link);
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
